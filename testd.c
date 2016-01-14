@@ -246,6 +246,8 @@ void led_set(int led_num, int state){
 	char					filename[100];
 	int 					gpio_fd;
 
+// printf("setting led %i to %i\n",led_num,state);
+
 	set_state[1] = 0;
 	if(state)
 		set_state[0] = '0';
@@ -255,7 +257,8 @@ void led_set(int led_num, int state){
 	gpio_export(gpio[led_num]);
 	gpio_set_dir(gpio[led_num], 1);
 
-	snprintf(filename,30,"/sys/class/gpio/gpio%d/value",gpio[led_num]);
+	snprintf(filename,sizeof(filename),"/sys/class/gpio/gpio%d/value",gpio[led_num]);
+//	printf("\nwriting to <%s>\n",filename);
 	gpio_fd = open(filename,O_WRONLY);
 	write(gpio_fd,set_state,2);
 	close(gpio_fd);
@@ -263,36 +266,33 @@ void led_set(int led_num, int state){
 	return;
 }
 
-void cycle_leds(uint8_t *led, int *index){
+void cycle_leds(uint8_t cbyte){
 	int 					i,ii;
 //	char 					*on = "0", *off = "1";
-	uint8_t 				cbyte;
+//	uint8_t 				cbyte;
 	uint8_t					led_mask[5] = { B8(00000000), 
 											B8(00000001), 	
 											B8(00000010), 
 											B8(00000100),
 											B8(00001000)};
 
-
-    printf("  index = %i\n", *index);
-    cbyte = led[*index] & B8(00011111);
+    cbyte = cbyte & B8(00011111);
     printf("cbyte <%02x>\n  ",cbyte);
 
 	for(i=0;i<4;i++){
 		if(cbyte & led_mask[i]){
-			printf("%i on - ",i);
+			printf("1");
 			led_set(i,ON);
 		}
 		else{
-			printf("%i off - ",i);
+			printf("0");
 			led_set(i,OFF);
 		}
+		sleep(1);
 	}
 			printf("\n");
 
-	*index += 1;
-	if(*index > 5)
-		*index = 0;
+
 	return;
 }
 
@@ -312,6 +312,35 @@ int main(void){
 	int 				led_index = 0;
 	int 				i;
 
+	printf('mess with leds\n');
+	led_set(0,0);
+	led_set(1,0);
+	led_set(2,0);
+	led_set(3,0);
+	sleep(2);
+	led_set(0,1);
+	led_set(1,0);
+	led_set(2,0);
+	led_set(3,0);
+	sleep(2);
+	led_set(0,1);
+	led_set(1,1);
+	led_set(2,0);
+	led_set(3,0);
+	sleep(2);
+	led_set(0,1);
+	led_set(1,1);
+	led_set(2,1);
+	led_set(3,0);	
+	sleep(2);
+	led_set(0,1);
+	led_set(1,1);
+	led_set(2,1);
+	led_set(3,1);	
+
+	sleep(3);
+	printf("startng loop\n");
+
 
 	// struct{
 	// 	int 			l1;
@@ -323,20 +352,26 @@ int main(void){
 	/* test PCF8563 for alarm condition */
 //	if(test_alm()){
 	while(1){
-//		reset_alm();
-		sec_count += 1;
-		if(sec_count < 60){
-			cycle_leds(led_state, &led_index);
-			sleep(1);
-		}
-		else{
-			sec_count =0;
-			printf("check control bits\n");	
+			sec_count += 1;
+			if(sec_count < 60){
+				cycle_leds(led_state[led_index]);
+				led_index += 1;
+				if(led_index > 4)
+					led_index = 0;
+				sleep(3);
+			}
+			else{
+				sec_count =0;
+				printf("check control bits\n");	
+			}
 		}
 
-	}
+	
+
+
+
 	printf("normal termination\n");
-	return 0;
+	return 1;
 }
 
 
