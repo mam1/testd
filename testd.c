@@ -6,9 +6,14 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include "bitlit.h"
+
 #define SYSFS_GPIO_DIR "/sys/class/gpio"
 #define POLL_TIMEOUT (3 * 1000) /* 3 seconds */
 #define MAX_BUF 100
+
+#define ON 			1
+#define OFF 		0
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -233,53 +238,70 @@ int gpio_set_dir(unsigned int gpio, unsigned int out_flag)
 // 	return close(fd);
 // }
 
-/****************************************************************
- * Main
- ****************************************************************/
-void cycle_leds(uint_8 *led, int *index){
+
+void led_set(int led_num, int state){
+
+	char					set_state[2];
 	unsigned int 			gpio[4] = {66,69,68,67};
-	int 					gpio_fd;
-	int 					i,ii;
 	char					filename[100];
+	int 					gpio_fd;
+
+	set_state[1] = 0;
+	if(state)
+		set_state[0] = '1';
+	else
+		set_state[0] = '0';
+
+	gpio_export(gpio[led_num]);
+	gpio_set_dir(gpio[led_num], 1);
+
+	snprintf(filename,30,"/sys/class/gpio/gpio%d/value",gpio[led_num]);
+	gpio_fd = open(filename,O_WRONLY);
+	write(gpio_fd,set_state,2);
+	close(gpio_fd);
+		
+	return;
+}
+
+void cycle_leds(uint8_t *led, int *index){
+	int 					i,ii;
 	char 					*on = "0", *off = "1";
 	uint8_t 				cbyte;
-
-	cbyte = led[index] & B8(00001111);
-
-	uint8_t					 led_mask[5] = {B8(00000000), 
+	uint8_t					led_mask[5] = {B8(00000000), 
 											B8(00000001), 	
 											B8(00000010), 
 											B8(00000100),
 											B8(00001000)};
 
-	for(i=0;i<5;i++){
+	cbyte = led[*index] & B8(00001111);
+	for(i=0;i<4;i++){
 		if(cbyte & led_mask[i])
-			led_on(i);
+			led_set(i,ON);
 		else
-			led_off(i);
+			led_set(i,OFF);
 	}
 
 	*index += 1;
-	if index > 4){
+	if(*index > 4)
 		*index = 0;
 	return;
 }
 
 
-
-
+/****************************************************************
+ * Main
+ ****************************************************************/
 
 int main(void){
 
-
 	int 					sec_count = 1;
-
-	uint_8				led_state[5] = {B8(00000000), 
+	uint8_t				led_state[5] = {B8(00000000), 
 										B8(00000001), 	
 										B8(00000010), 
 										B8(00000100),
 										B8(00001000)};
 	int 				led_index = 0;
+	int 				i;
 
 
 	struct{
@@ -290,52 +312,20 @@ int main(void){
 	} leds;
 
 	/* test PCF8563 for alarm condition */
-	if(test_alm()){
-		reset_alm();
+//	if(test_alm()){
+	while(1){
+//		reset_alm();
 		sec_count += 1;
-
 		if(sec_count < 60){
 					cycle_leds(led_state, &led_index);
 		}
 		else{
 			printf("check control bits\n");	
 		}
+		sleep(1);
 		
 	}
 
-
-
-	for(i=0;i<4;i++){
-		gpio_export(gpio[i]);
-		gpio_set_dir(gpio[i], 1);
-	}
-
-	for(ii=0;ii<20;ii++){
-
-		for(i=3;i>-1;i--){
-			snprintf(filename,30,"/sys/class/gpio/gpio%d/value",gpio[i]);
-			printf("filename <%s>\n",filename);
-			gpio_fd = open(filename,O_WRONLY);
-			printf("returned fd = %i\n",gpio_fd);
-			write(gpio_fd,"0",2);
-			printf("led %d on\n",i);
-			sleep(1);
-			close(gpio_fd);
-		}
-	
-		for(i=0;i<4;i++){
-			snprintf(filename,30,"/sys/class/gpio/gpio%d/value",gpio[i]);
-			printf("filename <%s>\n",filename);
-			gpio_fd = open(filename,O_WRONLY);
-			printf("returned fd = %i\n",gpio_fd);
-			write(gpio_fd,"1",2);
-			printf("led %d off\n",i);
-			sleep(1);
-			close(gpio_fd);
-		}
-
-
-	}
 
 	printf("normal termination\n");
 	return 0;
