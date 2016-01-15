@@ -242,11 +242,9 @@ int gpio_set_dir(unsigned int gpio, unsigned int out_flag)
 void led_set(int led_num, int state){
 
 	char					set_state[2];
-	unsigned int 			gpio[4] = {66,69,68,67};
+	unsigned int 			gpio[4] = {66,69,68,67}; //map gpio to led
 	char					filename[100];
 	int 					gpio_fd;
-
-// printf("setting led %i to %i\n",led_num,state);
 
 	set_state[1] = 0;
 	if(state)
@@ -256,43 +254,11 @@ void led_set(int led_num, int state){
 
 	gpio_export(gpio[led_num]);
 	gpio_set_dir(gpio[led_num], 1);
-
 	snprintf(filename,sizeof(filename),"/sys/class/gpio/gpio%d/value",gpio[led_num]);
-//	printf("\nwriting to <%s>\n",filename);
 	gpio_fd = open(filename,O_WRONLY);
 	write(gpio_fd,set_state,2);
 	close(gpio_fd);
 		
-	return;
-}
-
-void cycle_leds(uint8_t cbyte){
-	int 					i,ii;
-//	char 					*on = "0", *off = "1";
-//	uint8_t 				cbyte;
-	uint8_t					led_mask[5] = { B8(00000000), 
-											B8(00000001), 	
-											B8(00000010), 
-											B8(00000100),
-											B8(00001000)};
-
-    cbyte = cbyte & B8(00011111);
-    printf("cbyte <%02x>\n  ",cbyte);
-
-	for(i=0;i<4;i++){
-		if(cbyte & led_mask[i]){
-			printf("1");
-			led_set(i,ON);
-		}
-		else{
-			printf("0");
-			led_set(i,OFF);
-		}
-		sleep(1);
-	}
-			printf("\n");
-
-
 	return;
 }
 
@@ -303,139 +269,32 @@ void cycle_leds(uint8_t cbyte){
 
 int main(void){
 
-	int 					sec_count = 1;
-	uint8_t				led_state[5] = {B8(00000000), 
-										B8(00000001), 	
-										B8(00000010), 
-										B8(00000100),
-										B8(00001000)};
-	int 				led_index = 0;
-	int 				i;
+	int 		i;
+	int 		on_led;
 
-	printf('mess with leds\n');
-	led_set(0,0);
-	led_set(1,0);
-	led_set(2,0);
-	led_set(3,0);
-	sleep(2);
+	printf("\n\n**** testd version 0.0 ****\n");
+	printf("  startng loop\n");
+
+
+	on_led = 0;
 	led_set(0,1);
 	led_set(1,0);
 	led_set(2,0);
 	led_set(3,0);
-	sleep(2);
-	led_set(0,1);
-	led_set(1,1);
-	led_set(2,0);
-	led_set(3,0);
-	sleep(2);
-	led_set(0,1);
-	led_set(1,1);
-	led_set(2,1);
-	led_set(3,0);	
-	sleep(2);
-	led_set(0,1);
-	led_set(1,1);
-	led_set(2,1);
-	led_set(3,1);	
-
-	sleep(3);
-	printf("startng loop\n");
-
-
-	// struct{
-	// 	int 			l1;
-	// 	int 			l2;
-	// 	int 			l3;
-	// 	int 			l4;
-	// } leds;
-
-	/* test PCF8563 for alarm condition */
-//	if(test_alm()){
+	sleep(1);
 	while(1){
-			sec_count += 1;
-			if(sec_count < 60){
-				cycle_leds(led_state[led_index]);
-				led_index += 1;
-				if(led_index > 4)
-					led_index = 0;
-				sleep(3);
-			}
-			else{
-				sec_count =0;
-				printf("check control bits\n");	
-			}
-		}
-
-	
-
-
+		led_set(on_led,0);
+		on_led += 1;
+		if(on_led > 3) on_led = 0;
+		led_set(on_led,1);
+		sleep(1);
+		// if(test_alm(rtc)){
+		// 	reset_alm(rtc);
+		// 	update();
+	}
 
 	printf("normal termination\n");
 	return 1;
 }
 
-
-
-// int main(int argc, char **argv, char **envp)
-// {
-// 	struct pollfd fdset[2];
-// 	int nfds = 2;
-// 	int gpio_fd, timeout, rc;
-// 	char *buf[MAX_BUF];
-// 	unsigned int gpio;
-// 	int len;
-
-
-
-// 	if (argc < 2) {
-// 		printf("Usage: gpio-int <gpio-pin>\n\n");
-// 		printf("Waits for a change in the GPIO pin voltage level or input on stdin\n");
-// 		exit(-1);
-// 	}
-
-// 	gpio = atoi(argv[1]);
-
-// 	gpio_export(gpio);
-// 	gpio_set_dir(gpio, 0);
-// 	gpio_set_edge(gpio, "rising");
-// 	gpio_fd = gpio_fd_open(gpio);
-
-// 	timeout = POLL_TIMEOUT;
- 
-// 	while (1) {
-// 		memset((void*)fdset, 0, sizeof(fdset));
-
-// 		fdset[0].fd = STDIN_FILENO;
-// 		fdset[0].events = POLLIN;
-      
-// 		fdset[1].fd = gpio_fd;
-// 		fdset[1].events = POLLPRI;
-
-// 		rc = poll(fdset, nfds, timeout);      
-
-// 		if (rc < 0) {
-// 			printf("\npoll() failed!\n");
-// 			return -1;
-// 		}
-      
-// 		if (rc == 0) {
-// 			printf(".");
-// 		}
-            
-// 		if (fdset[1].revents & POLLPRI) {
-// 			len = read(fdset[1].fd, buf, MAX_BUF);
-// 			printf("\npoll() GPIO %d interrupt occurred\n", gpio);
-// 		}
-
-// 		if (fdset[0].revents & POLLIN) {
-// 			(void)read(fdset[0].fd, buf, 1);
-// 			printf("\npoll() stdin read 0x%2.2X\n", (unsigned int) buf[0]);
-// 		}
-
-// 		fflush(stdout);
-// 	}
-
-// 	gpio_fd_close(gpio_fd);
-// 	return 0;
-// }
 
