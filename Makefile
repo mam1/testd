@@ -16,7 +16,7 @@ ifeq ($(UNAME_S),Darwin)
 	program_LIBRARY_DIRS := 
 	program_LIBRARIES := 
 else
-	program_INCLUDE_DIRS := 
+	program_INCLUDE_DIRS := ../Pcon-share
 	program_LIBRARY_DIRS := 
 	program_LIBRARIES := 
 endif
@@ -61,6 +61,8 @@ ifeq ($(UNAME_S),Darwin)
 else
 	rsync -avz  /home/mam1/Git/testd/ root@192.168.254.34:/home/rsync-Mint	
 endif
+
+
 
 # clean up
 	@- $(RM) -v $(program_NAME)

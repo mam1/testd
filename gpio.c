@@ -1,3 +1,14 @@
+#include <stdio.h>
+#include <unistd.h>		//sleep
+#include <stdint.h>		//uint_8, uint_16, uint_32, etc.
+#include <ctype.h> 		//isalnum, tolower
+#include <stdlib.h>
+#include <fcntl.h>
+#include <string.h>
+
+#include "bitlit.h"
+#include "gpio.h"
+
 // /****************************************************************
 //  * gpio_export
 //  ****************************************************************/
