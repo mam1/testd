@@ -8,80 +8,13 @@
 
 #include "bitlit.h"
 
-#define SYSFS_GPIO_DIR "/sys/class/gpio"
-// #define POLL_TIMEOUT (3 * 1000) /* 3 seconds */
- #define MAX_BUF 100
+#include "gpio.h"
 
 #define ON 			1
 #define OFF 		0
 
 
-// /****************************************************************
-//  * gpio_export
-//  ****************************************************************/
-int gpio_export(unsigned int gpio)
-{
-	int fd, len;
-	char buf[MAX_BUF];
- 
-	fd = open(SYSFS_GPIO_DIR "/export", O_WRONLY);
-	if (fd < 0) {
-		perror("gpio/export");
-		return fd;
-	}
- 
-	len = snprintf(buf, sizeof(buf), "%d", gpio);
-	write(fd, buf, len);
-	close(fd);
- 
-	return 0;
-}
 
-// /****************************************************************
-//  * gpio_unexport
-//  ****************************************************************/
-// int gpio_unexport(unsigned int gpio)
-// {
-// 	int fd, len;
-// 	char buf[MAX_BUF];
- 
-// 	fd = open(SYSFS_GPIO_DIR "/unexport", O_WRONLY);
-// 	if (fd < 0) {
-// 		perror("gpio/export");
-// 		return fd;
-// 	}
- 
-// 	len = snprintf(buf, sizeof(buf), "%d", gpio);
-// 	write(fd, buf, len);
-// 	close(fd);
-// 	return 0;
-// }
-
-// /****************************************************************
-//  * gpio_set_dir
-//  ****************************************************************/
-int gpio_set_dir(unsigned int gpio, unsigned int out_flag)
-{
-	int fd;
-	char buf[MAX_BUF];
- 
-	// len = snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR  "/gpio%d/direction", gpio);
-	snprintf(buf,sizeof(buf),"/sys/class/gpio/gpio%d/direction",gpio);
- 
-	fd = open(buf, O_WRONLY);
-	if (fd < 0) {
-		perror("gpio/direction");
-		return fd;
-	}
- 
-	if (out_flag)
-		write(fd, "out", 4);
-	else
-		write(fd, "in", 3);
- 
-	close(fd);
-	return 0;
-}
 
 void led_set(int led_num, int state){
 
